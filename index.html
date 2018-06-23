@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Multi widget crud (with qunit tests)</title>
+
+    <link rel="stylesheet" href="https://code.jquery.com/qunit/qunit-2.6.1.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="multi-widget-crud.js"></script>
+
+
+
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+
+<div class="col-sm-12"  data-intro="Заполните адреса">
+    <div class="col-xs-12">
+        <h4 class="subheader" style="margin-top: 0;">Заполните адреса</h4>
+    </div><!-- end col-xs-12 -->
+    <div class="js-placemark-container dynamic-widget">
+
+    </div>
+</div>
+
+
+<!-- определяем шаблоны, которые будут реплицироваться в нашем компоненте.
+    Их из разметки лучше скрыть.
+    Они должны иметь класс hidden (либо определите параметр плагина с именем hiddenClassName)-->
+<div class="col-xs-12 col-sm-4 top hidden placemark-post-skeleton">
+    <label>Индекс:</label>
+    <input type="text" name="postIndex[]" value=""  />
+</div>
+
+<div class="col-xs-12 col-sm-8 top hidden placemark-address-skeleton">
+    <label>Адрес:</label>
+    <input type="text" name="address[]" value=""  />
+</div>
+
+<div class="col-xs-12 hidden add-placemark-skeleton">
+    <a href="#" class="addcat js-add-placemark">Добавить дополнительный адрес</a>
+</div>
+
+<a href="#" class="add-fields__delete hidden remove-placemark-skeleton">X</a>
+<!-- конец блока шаблонов -->
+
+
+<script type="text/javascript">
+    if(window.hasOwnProperty('MultiItemCrudWidget')){ //avoid execute twig code twice
+
+        var jsonSource = '[{"postIndex": 123, "address": "Moskow, krasnaya street, 16", "index": 0},' +
+            '{"postIndex": 555432, "address": "Krasnodar, Moskowskaya 16", "index": 1} ]';
+
+        var jsonData = JSON.parse(jsonSource);
+
+        var multiItemCrudWidget = new MultiItemCrudWidget({
+            //items берём из базы данных, например
+            //они попадут в наши компоненты при помощи метода инициализации блоков synchronizeWidgetWithRowData
+            items: jsonData,
+            skeletonSelectors: {'postIndex':'.placemark-post-skeleton',
+                'address':'.placemark-address-skeleton',
+            },
+            addWidgetSkeleton: '.add-placemark-skeleton',
+            removeWidgetSkeleton: '.remove-placemark-skeleton',
+            rowElementTemplate: '<div class="row"></div>',
+            wrapperSelector: '.js-placemark-container',
+
+            //начальная инициализация элементов переданными в json данными
+            synchronizeWidgetWithRowData: function(rowWidget, item){
+                rowWidget.find('input[name="postIndex[]"]').first().val(item.postIndex);
+                rowWidget.find('input[name="address[]"]').first().val(item.address);
+            },
+
+            afterRowCreate: function(rowSelector){
+                //your code here
+            }
+        });
+    }
+
+</script>
+
+
+<div id="qunit"></div>
+<div id="qunit-fixture"></div>
+<script src="https://code.jquery.com/qunit/qunit-2.6.1.js"></script>
+<script >
+QUnit.test( "multi-widget-crud-test", function( assert ) {
+
+
+    assert.ok( $("input[name='postIndex[]']").first().val() == "123", "Value of first input with name=postIndex[] expected 123" );
+
+    $('.js-add-placemark').click();
+
+    assert.ok( $('.row').length == 3, "Now row count must be 3");
+
+    $('.add-fields__delete[data-index=0]').click();
+    assert.ok( $('.row').length == 2, "after remove first block length must be 2");
+
+    $('.add-fields__delete').click();
+
+    assert.ok( $('.row').length == 1, "after clicking on all remove buttons we must have one widget");
+    assert.ok( $("input[name='postIndex[]']").val() == '', "... with zero values");
+
+    jsonData = JSON.parse(jsonSource);
+
+    multiItemCrudWidget.reset(jsonData);
+    assert.ok( $("input[name='postIndex[]']").first().val() == "123", "Value of first input with name=postIndex[] expected 123" );
+    assert.ok( $(".row[data-index=1] input[name='address[]']").first().val() == "Krasnodar, Moskowskaya 16", "Value of last input with name=address[] expected 'Krasnodar, Moskowskaya 16'" );
+
+});
+</script>
+
+</body>
+</html>
